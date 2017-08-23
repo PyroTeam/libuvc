@@ -32,36 +32,40 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 #include <stdio.h>
+#include <opencv/cv.h>
 #include <opencv/highgui.h>
 
 #include "libuvc/libuvc.h"
 
 void cb(uvc_frame_t *frame, void *ptr) {
-  uvc_frame_t *bgr;
+  uvc_frame_t *rgb;
   uvc_error_t ret;
   IplImage* cvImg;
 
   printf("callback! length = %u, ptr = %d\n", frame->data_bytes, (int) ptr);
 
-  bgr = uvc_allocate_frame(frame->width * frame->height * 3);
-  if (!bgr) {
-    printf("unable to allocate bgr frame!");
+  rgb = uvc_allocate_frame(frame->width * frame->height * 3);
+  if (!rgb) {
+    printf("unable to allocate rgb frame!");
     return;
   }
 
-  ret = uvc_any2bgr(frame, bgr);
+  ret = uvc_mjpeg2rgb(frame, rgb);
   if (ret) {
-    uvc_perror(ret, "uvc_any2bgr");
-    uvc_free_frame(bgr);
+    uvc_perror(ret, "uvc_mjpeg2rgb");
+    uvc_free_frame(rgb);
     return;
   }
+
 
   cvImg = cvCreateImageHeader(
-      cvSize(bgr->width, bgr->height),
+      cvSize(rgb->width, rgb->height),
       IPL_DEPTH_8U,
       3);
 
-  cvSetData(cvImg, bgr->data, bgr->width * 3); 
+  cvSetData(cvImg, rgb->data, rgb->width * 3);
+
+  //cvtColor(cvImg, cvImg, CV_RGB2BGR);
 
   cvNamedWindow("Test", CV_WINDOW_AUTOSIZE);
   cvShowImage("Test", cvImg);
@@ -69,7 +73,7 @@ void cb(uvc_frame_t *frame, void *ptr) {
 
   cvReleaseImageHeader(&cvImg);
 
-  uvc_free_frame(bgr);
+  uvc_free_frame(rgb);
 }
 
 int main(int argc, char **argv) {
@@ -107,7 +111,7 @@ int main(int argc, char **argv) {
       uvc_print_diag(devh, stderr);
 
       res = uvc_get_stream_ctrl_format_size(
-          devh, &ctrl, UVC_FRAME_FORMAT_YUYV, 640, 480, 30
+          devh, &ctrl, UVC_FRAME_FORMAT_MJPEG, 1920, 1080, 10
       );
 
       uvc_print_stream_ctrl(&ctrl, stderr);
@@ -115,7 +119,7 @@ int main(int argc, char **argv) {
       if (res < 0) {
         uvc_perror(res, "get_mode");
       } else {
-        res = uvc_start_streaming(devh, &ctrl, cb, 12345, 0);
+        res = uvc_start_streaming(devh, &ctrl, cb, NULL, 0);
 
         if (res < 0) {
           uvc_perror(res, "start_streaming");
@@ -129,7 +133,7 @@ int main(int argc, char **argv) {
             /* uvc_perror(resPT, "set_pt_abs"); */
             uvc_error_t resEXP = uvc_set_exposure_abs(devh, 20 + i * 5);
             uvc_perror(resEXP, "set_exp_abs");
-            
+
             sleep(1);
           }
           sleep(10);
@@ -150,4 +154,3 @@ int main(int argc, char **argv) {
 
   return 0;
 }
-

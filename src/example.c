@@ -8,6 +8,8 @@ void cb(uvc_frame_t *frame, void *ptr) {
   uvc_frame_t *bgr;
   uvc_error_t ret;
 
+  printf("compressed image size : %lu \n", frame->data_bytes);
+
   /* We'll convert the image from YUV/JPEG to BGR, so allocate space */
   bgr = uvc_allocate_frame(frame->width * frame->height * 3);
   if (!bgr) {
@@ -16,12 +18,14 @@ void cb(uvc_frame_t *frame, void *ptr) {
   }
 
   /* Do the BGR conversion */
-  ret = uvc_any2bgr(frame, bgr);
+  ret = uvc_mjpeg2rgb(frame, bgr);
   if (ret) {
     uvc_perror(ret, "uvc_any2bgr");
     uvc_free_frame(bgr);
     return;
   }
+
+  printf("uncompressed image size : %lu \n", bgr->data_bytes);
 
   /* Call a user function:
    *
@@ -37,13 +41,13 @@ void cb(uvc_frame_t *frame, void *ptr) {
    */
 
   /* Use opencv.highgui to display the image:
-   * 
+   *
    * cvImg = cvCreateImageHeader(
    *     cvSize(bgr->width, bgr->height),
    *     IPL_DEPTH_8U,
    *     3);
    *
-   * cvSetData(cvImg, bgr->data, bgr->width * 3); 
+   * cvSetData(cvImg, bgr->data, bgr->width * 3);
    *
    * cvNamedWindow("Test", CV_WINDOW_AUTOSIZE);
    * cvShowImage("Test", cvImg);
@@ -99,8 +103,8 @@ int main(int argc, char **argv) {
       /* Try to negotiate a 640x480 30 fps YUYV stream profile */
       res = uvc_get_stream_ctrl_format_size(
           devh, &ctrl, /* result stored in ctrl */
-          UVC_FRAME_FORMAT_YUYV, /* YUV 422, aka YUV 4:2:2. try _COMPRESSED */
-          640, 480, 30 /* width, height, fps */
+          UVC_FRAME_FORMAT_MJPEG,
+          1920, 1080, 10 /* width, height, fps */
       );
 
       /* Print out the result */
@@ -112,7 +116,7 @@ int main(int argc, char **argv) {
         /* Start the video stream. The library will call user function cb:
          *   cb(frame, (void*) 12345)
          */
-        res = uvc_start_streaming(devh, &ctrl, cb, 12345, 0);
+        res = uvc_start_streaming(devh, &ctrl, cb, NULL, 0);
 
         if (res < 0) {
           uvc_perror(res, "start_streaming"); /* unable to start stream */
@@ -145,4 +149,3 @@ int main(int argc, char **argv) {
 
   return 0;
 }
-

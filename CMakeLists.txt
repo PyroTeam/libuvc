@@ -108,6 +108,34 @@ if(BUILD_UVC_SHARED)
   #  opencv_core)
 endif()
 
+add_executable(
+    example
+    src/example.c
+)
+
+target_link_libraries(
+    example
+    uvc
+)
+
+find_package( OpenCV REQUIRED )
+include_directories(${OpenCV_INCLUDE})
+set_target_properties(example PROPERTIES COMPILE_FLAGS "-g3")
+
+add_executable(
+    test1
+    src/test.c
+)
+
+target_link_libraries(
+    test1
+    uvc
+    ${OpenCV_LIBS}
+)
+
+set_target_properties(test1 PROPERTIES COMPILE_FLAGS "-g3")
+
+
 install(TARGETS ${UVC_TARGETS}
     EXPORT libuvcTargets
   LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/${CMAKE_LIBRARY_ARCHITECTURE}"
