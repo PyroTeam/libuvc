@@ -123,18 +123,31 @@ include_directories(${OpenCV_INCLUDE})
 set_target_properties(example PROPERTIES COMPILE_FLAGS "-g3")
 
 add_executable(
-    test1
-    src/test.c
+    example2
+    src/example2.c
 )
 
 target_link_libraries(
-    test1
+    example2
     uvc
-    ${OpenCV_LIBS}
 )
 
-set_target_properties(test1 PROPERTIES COMPILE_FLAGS "-g3")
+set_target_properties(example2 PROPERTIES COMPILE_FLAGS "-g3")
 
+#
+# add_executable(
+#     test1
+#     src/test.c
+# )
+#
+# target_link_libraries(
+#     test1
+#     uvc
+#     ${OpenCV_LIBS}
+# )
+#
+# set_target_properties(test1 PROPERTIES COMPILE_FLAGS "-g3")
+#
 
 install(TARGETS ${UVC_TARGETS}
     EXPORT libuvcTargets

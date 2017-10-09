@@ -919,6 +919,8 @@ uvc_error_t uvc_stream_start(
           {
               endpoint_bytes_per_packet = endpoint_bytes_per_packet * (epdesc_comp->bMaxBurst + 1) * (epdesc_comp->bmAttributes + 1);
           }
+
+          libusb_free_ss_endpoint_companion_descriptor(epdesc_comp);
           break;
         }
       }
@@ -945,10 +947,13 @@ uvc_error_t uvc_stream_start(
     }
 
     /* Select the altsetting */
+    printf("%d, %d\n", altsetting->bInterfaceNumber, altsetting->bAlternateSetting);
     ret = libusb_set_interface_alt_setting(strmh->devh->usb_devh,
                                            altsetting->bInterfaceNumber,
                                            altsetting->bAlternateSetting);
+
     if (ret != UVC_SUCCESS) {
+      printf("Error : %d : %s\n", ret, libusb_strerror(ret));
       UVC_DEBUG("libusb_set_interface_alt_setting failed");
       goto fail;
     }
